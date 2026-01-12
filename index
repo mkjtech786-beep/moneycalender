@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profit & Loss Calendar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #333;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --border: #e0e0e0;
+        }
+
+        [data-theme="dark"] {
+            --primary: #5da9ff;
+            --bg: #121212;
+            --card: #1e1e1e;
+            --text: #e0e0e0;
+            --border: #333;
+            --green: #27ae60;
+            --red: #c0392b;
+        }
+
+        html, body {
+            height: 100%; width: 100%; overflow: hidden;
+            background-color: var(--bg); color: var(--text);
+            -webkit-text-size-adjust: none; text-size-adjust: none;
+            font-family: 'Roboto', sans-serif; margin: 0;
+        }
+
+        .app-container {
+            display: flex; flex-direction: column; height: 100vh; width: 100%;
+            max-width: 500px; margin: 0 auto; background-color: var(--bg);
+        }
+
+        /* HEADER */
+        header {
+            height: 40px; background: var(--card); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 8px; border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .month-year { font-weight: 700; font-size: 14px; }
+        .btn-icon {
+            background: none; border: none; font-size: 16px; color: var(--text);
+            padding: 0 5px; cursor: pointer; width: 30px;
+        }
+
+        /* CALENDAR AREA */
+        .calendar-area {
+            display: flex; flex-direction: column; padding: 5px; overflow-y: auto;
+            align-items: center; flex: 1; min-height: 0;
+        }
+        
+        .weekdays {
+            display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
+            font-size: 10px; font-weight: 700; color: #888; margin-bottom: 2px;
+            width: 100%; flex-shrink: 0;
+        }
+        
+        .days-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); 
+            grid-auto-rows: 38px; 
+            width: 100%;
+            gap: 2px; 
+            flex-shrink: 0;
+        }
+        
+        .day-box {
+            background-color: var(--card); border-radius: 3px; 
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 0; cursor: pointer; border: 1px solid transparent;
+        }
+        .day-box:active { background-color: #ddd; }
+        .day-box.today { border: 1px solid var(--primary); }
+        .day-box.empty { background: transparent; pointer-events: none; }
+        
+        .date-num { 
+            font-size: 11px; font-weight: 700; line-height: 1; 
+            padding: 2px 3px; align-self: flex-start; 
+        }
+        
+        .amount-text {
+            font-size: 10px; font-weight: 900; text-align: right; line-height: 1;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+            padding: 2px 3px; align-self: flex-end;
+        }
+        .profit { color: var(--green); } .loss { color: var(--red); }
+
+        /* LATEST ENTRY DISPLAY (Big Amount) */
+        .latest-stats {
+            width: 100%;
+            padding: 15px 10px 5px 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-amount {
+            font-size: 24px; /* BIG AMOUNT */
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .stat-green { color: var(--green); }
+        .stat-red { color: var(--red); }
+
+        /* VIP ANIMATION TEXT */
+        .vip-text {
+            margin-top: auto; /* Pushes to bottom if space allows */
+            padding: 10px 0 10px 0;
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            
+            /* VIP Gradient Style */
+            background: linear-gradient(270deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 800% 800%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            
+            animation: rainbowAnim 4s ease infinite;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        @keyframes rainbowAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* FOOTER */
+        footer {
+            height: 30px; background: var(--card); display: flex; align-items: center; 
+            justify-content: space-between; padding: 0 10px; flex-shrink: 0; font-size: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .summary-item { display: flex; gap: 4px; align-items: center; }
+        .summary-label { font-size: 8px; text-transform: uppercase; opacity: 0.6; font-weight: 600; }
+        .summary-val { font-weight: 800; font-size: 11px; } .net-val { font-size: 12px; }
+
+        /* MODAL */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .modal.active { opacity: 1; pointer-events: all; }
+        .modal-box {
+            background: var(--card); width: 85%; max-width: 280px; border-radius: 8px;
+            padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); text-align: center;
+        }
+        .type-row {
+            display: flex; background: var(--bg); border-radius: 5px; padding: 3px; margin-bottom: 15px;
+        }
+        .type-opt {
+            flex: 1; padding: 6px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: 600;
+        }
+        .type-opt.active.profit { background: var(--green); color: white; }
+        .type-opt.active.loss { background: var(--red); color: white; }
+        .input-group {
+            display: flex; align-items: center; background: var(--bg); border-radius: 5px;
+            padding: 5px 10px; margin-bottom: 15px; border: 1px solid var(--border);
+        }
+        .input-group span { font-weight: bold; margin-right: 5px; font-size: 14px; }
+        .input-group input {
+            border: none; background: transparent; outline: none; width: 100%; font-size: 16px;
+            color: var(--text); font-weight: bold;
+        }
+        .btn-row { display: flex; gap: 10px; }
+        .btn-save {
+            flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold;
+            cursor: pointer; font-size: 14px; background: var(--primary); color: white;
+        }
+        .btn-del-main {
+            flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold;
+            cursor: pointer; font-size: 14px; background: var(--red); color: white; display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <button class="btn-icon" id="prevBtn">&lt;</button>
+        <div class="month-year" id="monthDisplay">Month Year</div>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-icon" id="themeBtn">🌙</button>
+            <button class="btn-icon" id="nextBtn">&gt;</button>
+        </div>
+    </header>
+
+    <div class="calendar-area">
+        <div class="weekdays">
+            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+        </div>
+        <div class="days-grid" id="daysGrid"></div>
+
+        <!-- Latest Entry Display -->
+        <div class="latest-stats" id="latestStats" style="display: none;">
+            <div class="stat-label" id="statLabel">Latest Profit</div>
+            <div class="stat-amount" id="statAmount">Rs 2,782</div>
+        </div>
+        
+        <!-- VIP Animation Text -->
+        <div class="vip-text">
+            MADE BY - MAHTAB KHAN JAMALI
+        </div>
+    </div>
+
+    <footer>
+        <div class="summary-item">
+            <span class="summary-label">NET:</span>
+            <span class="summary-val net-val" id="footerNet">Rs 0</span>
+        </div>
+        <div style="display:flex; gap: 10px;">
+            <div class="summary-item">
+                <span class="summary-label" style="color:var(--green)">P:</span>
+                <span class="summary-val" id="footerProfit">Rs 0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label" style="color:var(--red)">L:</span>
+                <span class="summary-val" id="footerLoss">Rs 0</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-box">
+        <h3 id="modalTitle" style="margin-bottom:12px; font-size:14px;">Date</h3>
+        
+        <div class="type-row">
+            <div class="type-opt active profit" onclick="setOpt('profit')">Profit</div>
+            <div class="type-opt loss" onclick="setOpt('loss')">Loss</div>
+        </div>
+
+        <div class="input-group">
+            <span>Rs</span>
+            <input type="number" id="amountInp" placeholder="Raqam" inputmode="numeric">
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-del-main" id="delBtn" onclick="delData()">🗑 Delete</button>
+            <button class="btn-save" onclick="saveData()">✓ Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currDate = new Date();
+    let selKey = null;
+    let type = 'profit';
+    let data = JSON.parse(localStorage.getItem('plData')) || {};
+    let theme = localStorage.getItem('theme') || 'light';
+
+    const grid = document.getElementById('daysGrid');
+    const modal = document.getElementById('editModal');
+    const inp = document.getElementById('amountInp');
+    const delBtn = document.getElementById('delBtn');
+    const footerNet = document.getElementById('footerNet');
+    const latestStats = document.getElementById('latestStats');
+    
+    applyTheme();
+    render();
+
+    document.getElementById('prevBtn').onclick = () => { currDate.setMonth(currDate.getMonth()-1); render(); };
+    document.getElementById('nextBtn').onclick = () => { currDate.setMonth(currDate.getMonth()+1); render(); };
+    document.getElementById('themeBtn').onclick = toggleTheme;
+
+    function applyTheme() {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('themeBtn').innerText = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    function toggleTheme() {
+        theme = theme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', theme);
+        applyTheme();
+    }
+
+    function render() {
+        const y = currDate.getFullYear();
+        const m = currDate.getMonth();
+        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        document.getElementById('monthDisplay').innerText = `${months[m]} ${y}`;
+
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m+1, 0).getDate();
+        
+        let html = '';
+        let pTot = 0, lTot = 0;
+
+        for(let i=0; i<firstDay; i++) {
+            html += `<div class="day-box empty"></div>`;
+        }
+
+        const today = new Date();
+        for(let i=1; i<=daysInMonth; i++) {
+            const dKey = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const isToday = (i===today.getDate() && m===today.getMonth() && y===today.getFullYear());
+            
+            let amtHTML = '';
+            if(data[dKey]) {
+                const val = Math.abs(data[dKey].amt);
+                if(data[dKey].type === 'profit') {
+                    amtHTML = `<div class="amount-text profit">Rs ${val}</div>`;
+                    pTot += val;
+                } else {
+                    amtHTML = `<div class="amount-text loss">-Rs ${val}</div>`;
+                    lTot += val;
+                }
+            }
+
+            html += `
+                <div class="day-box ${isToday ? 'today' : ''}" onclick="openBox('${dKey}')">
+                    <div class="date-num">${i}</div>
+                    ${amtHTML}
+                </div>
+            `;
+        }
+
+        grid.innerHTML = html;
+        
+        // Update Footer Stats
+        document.getElementById('footerProfit').innerText = `Rs ${pTot}`;
+        document.getElementById('footerLoss').innerText = `Rs ${lTot}`;
+        const net = pTot - lTot;
+        footerNet.innerText = `Rs ${net}`;
+        footerNet.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+        // Update Latest Entry Display
+        updateLatestStats(y, m, daysInMonth);
+    }
+
+    function updateLatestStats(year, month, maxDays) {
+        // Find latest entry in this month by looping backwards
+        let foundKey = null;
+        
+        for(let i = maxDays; i >= 1; i--) {
+            const dayStr = String(i).padStart(2, '0');
+            const monthStr = String(month + 1).padStart(2, '0');
+            const key = `${year}-${monthStr}-${dayStr}`;
+            if(data[key]) {
+                foundKey = key;
+                break;
+            }
+        }
+
+        if(foundKey) {
+            const entry = data[foundKey];
+            const val = Math.abs(entry.amt);
+            const isProfit = entry.type === 'profit';
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            // Determine Label
+            let labelText = isProfit ? "LATEST PROFIT" : "LATEST LOSS";
+            if(foundKey === todayStr) {
+                labelText = isProfit ? "TODAY PROFIT" : "TODAY LOSS";
+            }
+
+            // Update DOM
+            latestStats.style.display = 'block';
+            document.getElementById('statLabel').innerText = labelText;
+            document.getElementById('statLabel').className = `stat-label ${isProfit ? 'stat-green' : 'stat-red'}`;
+            
+            document.getElementById('statAmount').innerText = `Rs ${val}`;
+            document.getElementById('statAmount').className = `stat-amount ${isProfit ? 'stat-green' : 'stat-red'}`;
+        } else {
+            latestStats.style.display = 'none';
+        }
+    }
+
+    function openBox(key) {
+        selKey = key;
+        modal.classList.add('active');
+        inp.value = '';
+        delBtn.style.display = 'none';
+        
+        const [y,m,d] = key.split('-');
+        const dateObj = new Date(y, m-1, d);
+        document.getElementById('modalTitle').innerText = dateObj.toDateString();
+
+        if(data[key]) {
+            inp.value = Math.abs(data[key].amt);
+            setOpt(data[key].type);
+            delBtn.style.display = 'block';
+        } else {
+            setOpt('profit');
+        }
+        setTimeout(()=>inp.focus(), 100);
+    }
+
+    function setOpt(t) {
+        type = t;
+        document.querySelectorAll('.type-opt').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.type-opt.${t}`).classList.add('active');
+    }
+
+    function saveData() {
+        const val = parseFloat(inp.value);
+        if(!val || val===0) { closeModal(); return; }
+        data[selKey] = { type: type, amt: val };
+        localStorage.setItem('plData', JSON.stringify(data));
+        render();
+        closeModal();
+    }
+
+    function delData() {
+        delete data[selKey];
+        localStorage.setItem('plData', JSON.stringify(data));
+        render();
+        closeModal();
+    }
+
+    function closeModal() { modal.classList.remove('active'); }
+    modal.onclick = (e) => { if(e.target===modal) closeModal(); };
+</script>
+
+</body>
+</html>
